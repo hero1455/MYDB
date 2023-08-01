@@ -84,6 +84,7 @@ class HandleSocket implements Runnable {
             } catch(Exception e) {
                 break;
             }
+            System.out.println("ddddddddddddddddddddddd");
             byte[] sql = pkg.getData();
             byte[] result = null;
             Exception e = null;

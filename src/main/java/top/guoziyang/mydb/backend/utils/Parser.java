@@ -45,6 +45,7 @@ public class Parser {
         return Bytes.concat(l, str.getBytes());
     }
 
+    //相当于计算了string的hash值
     public static long str2Uid(String key) {
         long seed = 13331;
         long res = 0;

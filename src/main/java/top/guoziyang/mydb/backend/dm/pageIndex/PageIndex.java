@@ -7,9 +7,13 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import top.guoziyang.mydb.backend.dm.pageCache.PageCache;
 
+/**
+ * 内部维护了所有页面的空闲空间，提供按照空闲空间大小取出对应页面的页号的功能
+ */
 public class PageIndex {
     // 将一页划成40个区间
     private static final int INTERVALS_NO = 40;
+    //每一个区间的大小
     private static final int THRESHOLD = PageCache.PAGE_SIZE / INTERVALS_NO;
 
     private Lock lock;

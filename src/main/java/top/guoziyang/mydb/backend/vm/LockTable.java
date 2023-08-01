@@ -33,6 +33,27 @@ public class LockTable {
 
     // 不需要等待则返回null，否则返回锁对象
     // 会造成死锁则抛出异常
+    //  由于当前事务加锁后会出现死锁，于是取消当前事务，并释放当前事务的所有锁资源
+    public void remove(long xid) {
+        lock.lock();
+        try {
+            List<Long> l = x2u.get(xid);
+            if(l != null) {
+                while(l.size() > 0) {
+                    Long uid = l.remove(0);
+                    selectNewXID(uid);
+                }
+            }
+            waitU.remove(xid);
+            x2u.remove(xid);
+            waitLock.remove(xid);
+
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    //行级公平锁
     public Lock add(long xid, long uid) throws Exception {
         lock.lock();
         try {
@@ -62,26 +83,8 @@ public class LockTable {
         }
     }
 
-    public void remove(long xid) {
-        lock.lock();
-        try {
-            List<Long> l = x2u.get(xid);
-            if(l != null) {
-                while(l.size() > 0) {
-                    Long uid = l.remove(0);
-                    selectNewXID(uid);
-                }
-            }
-            waitU.remove(xid);
-            x2u.remove(xid);
-            waitLock.remove(xid);
-
-        } finally {
-            lock.unlock();
-        }
-    }
-
     // 从等待队列中选择一个xid来占用uid
+    // 这是一个公平锁
     private void selectNewXID(long uid) {
         u2x.remove(uid);
         List<Long> l = wait.get(uid);
@@ -107,14 +110,21 @@ public class LockTable {
     private Map<Long, Integer> xidStamp;
     private int stamp;
 
+
+    /**
+     * 因为图不连通，所以进行多次深搜，若在一次搜索中出现了搜索到一个节点两次就说明出现了环即死锁
+     * @return
+     */
     private boolean hasDeadLock() {
         xidStamp = new HashMap<>();
+        //每次搜索的编号
         stamp = 1;
         for(long xid : x2u.keySet()) {
             Integer s = xidStamp.get(xid);
             if(s != null && s > 0) {
                 continue;
             }
+            //编号自增
             stamp ++;
             if(dfs(xid)) {
                 return true;
@@ -125,6 +135,7 @@ public class LockTable {
 
     private boolean dfs(long xid) {
         Integer stp = xidStamp.get(xid);
+        //若编号相同则说明出现了环
         if(stp != null && stp == stamp) {
             return true;
         }

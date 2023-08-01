@@ -18,6 +18,8 @@ import top.guoziyang.mydb.common.Error;
  * 二进制格式为：
  * [FieldName][TypeName][IndexUid]
  * 如果field无索引，IndexUid为0
+ * fieldName以及TypeName存储的都是字节形式的字符串
+ * 字符串：[StringLength][StringData]
  */
 public class Field {
     long uid;
@@ -52,13 +54,17 @@ public class Field {
 
     private Field parseSelf(byte[] raw) {
         int position = 0;
+        //解析出字段名
         ParseStringRes res = Parser.parseString(raw);
         fieldName = res.str;
         position += res.next;
+        //解析出类型
         res = Parser.parseString(Arrays.copyOfRange(raw, position, raw.length));
         fieldType = res.str;
         position += res.next;
+        //解析出索引根节点的UID
         this.index = Parser.parseLong(Arrays.copyOfRange(raw, position, position+8));
+        //加载索引的B+树根节点
         if(index != 0) {
             try {
                 bt = BPlusTree.load(index, ((TableManagerImpl)tb.tbm).dm);

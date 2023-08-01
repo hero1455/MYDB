@@ -25,6 +25,10 @@ public class DataItemImpl implements DataItem {
     private Lock rLock;
     private Lock wLock;
     private DataManagerImpl dm;
+
+    /**
+     * [pgno] [offset]
+     */
     private long uid;
     private Page pg;
 
@@ -48,6 +52,7 @@ public class DataItemImpl implements DataItem {
         return new SubArray(raw.raw, raw.start+OF_DATA, raw.end);
     }
 
+    //记录原始数据
     @Override
     public void before() {
         wLock.lock();
@@ -55,12 +60,14 @@ public class DataItemImpl implements DataItem {
         System.arraycopy(raw.raw, raw.start, oldRaw, 0, oldRaw.length);
     }
 
+    //撤销修改
     @Override
     public void unBefore() {
         System.arraycopy(oldRaw, 0, raw.raw, raw.start, oldRaw.length);
         wLock.unlock();
     }
 
+    //落日志
     @Override
     public void after(long xid) {
         dm.logDataItem(xid, this);

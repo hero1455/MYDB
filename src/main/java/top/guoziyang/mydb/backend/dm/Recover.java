@@ -160,6 +160,11 @@ public class Recover {
         return Bytes.concat(logType, xidRaw, uidRaw, oldRaw, newRaw);
     }
 
+    /**
+     * 从byte数组中提取出各个属性来构造UpdateLogInfo
+     * @param log
+     * @return
+     */
     private static UpdateLogInfo parseUpdateLog(byte[] log) {
         UpdateLogInfo li = new UpdateLogInfo();
         li.xid = Parser.parseLong(Arrays.copyOfRange(log, OF_XID, OF_UPDATE_UID));

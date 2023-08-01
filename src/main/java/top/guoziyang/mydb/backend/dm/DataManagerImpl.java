@@ -66,9 +66,10 @@ public class DataManagerImpl extends AbstractCache<DataItem> implements DataMana
         int freeSpace = 0;
         try {
             pg = pc.getPage(pi.pgno);
+            //先做日志
             byte[] log = Recover.insertLog(xid, pg, raw);
             logger.log(log);
-
+            //再插入数据
             short offset = PageX.insert(pg, raw);
 
             pg.release();
@@ -104,6 +105,13 @@ public class DataManagerImpl extends AbstractCache<DataItem> implements DataMana
         super.release(di.getUid());
     }
 
+    /**
+     * 用uid计算出文件中DI的偏移量，用uid的高32位计算出页号
+     * @param uid
+     * @return
+     * @throws Exception
+     */
+
     @Override
     protected DataItem getForCache(long uid) throws Exception {
         short offset = (short)(uid & ((1L << 16) - 1));
@@ -118,7 +126,7 @@ public class DataManagerImpl extends AbstractCache<DataItem> implements DataMana
         di.page().release();
     }
 
-    // 在创建文件时初始化PageOne
+    // 在创建文件,初始化第一页并加载到缓存中
     void initPageOne() {
         int pgno = pc.newPage(PageOne.InitRaw());
         assert pgno == 1;

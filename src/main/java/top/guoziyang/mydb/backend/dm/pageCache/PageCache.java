@@ -10,7 +10,8 @@ import top.guoziyang.mydb.backend.utils.Panic;
 import top.guoziyang.mydb.common.Error;
 
 public interface PageCache {
-    
+
+    //页面大小8K
     public static final int PAGE_SIZE = 1 << 13;
 
     int newPage(byte[] initData);

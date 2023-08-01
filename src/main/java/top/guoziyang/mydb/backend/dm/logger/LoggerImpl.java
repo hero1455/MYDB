@@ -30,9 +30,17 @@ public class LoggerImpl implements Logger {
 
     private static final int SEED = 13331;
 
+    private static final int SZ_SIZE = 4;
+    private static final int SZ_CHECKSUM = 4;
+
+    //单条日志中size的偏移量,size表示日志中data的长度
     private static final int OF_SIZE = 0;
-    private static final int OF_CHECKSUM = OF_SIZE + 4;
-    private static final int OF_DATA = OF_CHECKSUM + 4;
+
+    //单条日志中校验和的偏移量
+    private static final int OF_CHECKSUM = OF_SIZE + SZ_SIZE;
+
+    //单条日志中，data域的偏移量
+    private static final int OF_DATA = OF_CHECKSUM + SZ_CHECKSUM;
     
     public static final String LOG_SUFFIX = ".log";
 
@@ -149,6 +157,11 @@ public class LoggerImpl implements Logger {
         return Bytes.concat(size, checksum, data);
     }
 
+    /**
+     * 将文件截断为指定大小，超出部分填充为0
+     * @param x
+     * @throws Exception
+     */
     @Override
     public void truncate(long x) throws Exception {
         lock.lock();
@@ -159,7 +172,13 @@ public class LoggerImpl implements Logger {
         }
     }
 
+
+    /**
+     * 取出一条日志的逻辑
+     * @return
+     */
     private byte[] internNext() {
+        //先获取size
         if(position + OF_DATA >= fileSize) {
             return null;
         }
@@ -174,7 +193,7 @@ public class LoggerImpl implements Logger {
         if(position + size + OF_DATA > fileSize) {
             return null;
         }
-
+        //根据size获取整条日志
         ByteBuffer buf = ByteBuffer.allocate(OF_DATA + size);
         try {
             fc.position(position);
@@ -183,6 +202,7 @@ public class LoggerImpl implements Logger {
             Panic.panic(e);
         }
 
+        //根据校验和校验日志完整性
         byte[] log = buf.array();
         int checkSum1 = calChecksum(0, Arrays.copyOfRange(log, OF_DATA, log.length));
         int checkSum2 = Parser.parseInt(Arrays.copyOfRange(log, OF_CHECKSUM, OF_DATA));

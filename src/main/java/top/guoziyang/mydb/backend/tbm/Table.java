@@ -165,6 +165,7 @@ public class Table {
     public void insert(long xid, Insert insert) throws Exception {
         Map<String, Object> entry = string2Entry(insert.values);
         byte[] raw = entry2Raw(entry);
+        //插入页面，并返回UID[pgno+offset]
         long uid = ((TableManagerImpl)tbm).vm.insert(xid, raw);
         for (Field field : fields) {
             if(field.isIndexed()) {
